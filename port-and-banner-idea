@@ -1,0 +1,211 @@
+# **Port Scanning and Banner Grabbing Techniques for Network Scanning**
+
+## **Introduction**
+Port scanning and banner grabbing are essential techniques for network analysis and security auditing. Port scanning identifies open ports on a target system, while banner grabbing retrieves service information from those ports. This document outlines various techniques for port scanning and banner grabbing, which can be implemented in a custom network scanning tool.
+
+---
+
+## **1. Port Scanning Techniques**
+
+### **1.1 TCP SYN Scan**
+#### **Purpose**
+To identify open ports by sending TCP SYN packets and analyzing the responses.
+
+#### **Method**
+- Send a TCP SYN packet to the target port.
+- If the target responds with a SYN/ACK, the port is open.
+- If the target responds with an RST, the port is closed.
+- No response indicates a filtered port.
+
+#### **Use Case**
+- Fast and reliable for identifying open ports.
+- Often referred to as "half-open" scanning because it does not complete the TCP handshake.
+
+---
+
+### **1.2 TCP Connect Scan**
+#### **Purpose**
+To identify open ports by completing the TCP three-way handshake.
+
+#### **Method**
+- Attempt to establish a full TCP connection to the target port.
+- If the connection is successful, the port is open.
+- If the connection is refused, the port is closed.
+- A timeout indicates a filtered port.
+
+#### **Use Case**
+- Simpler to implement than SYN scan but slower and more detectable.
+
+---
+
+### **1.3 TCP ACK Scan**
+#### **Purpose**
+To determine if a port is filtered by sending TCP ACK packets.
+
+#### **Method**
+- Send a TCP ACK packet to the target port.
+- If the target responds with an RST, the port is unfiltered.
+- No response indicates a filtered port.
+
+#### **Use Case**
+- Useful for detecting firewall rules and filtering configurations.
+
+---
+
+### **1.4 UDP Scan**
+#### **Purpose**
+To identify open UDP ports by sending UDP packets.
+
+#### **Method**
+- Send a UDP packet to the target port.
+- If the target responds with a UDP packet, the port is open.
+- If the target responds with an ICMP port unreachable error, the port is closed.
+- No response indicates a filtered port.
+
+#### **Use Case**
+- Slower than TCP scans due to the nature of UDP.
+- Useful for discovering services like DNS, SNMP, and DHCP.
+
+---
+
+### **1.5 FIN Scan**
+#### **Purpose**
+To identify open ports by sending TCP FIN packets.
+
+#### **Method**
+- Send a TCP FIN packet to the target port.
+- If the target responds with an RST, the port is closed.
+- No response indicates an open or filtered port.
+
+#### **Use Case**
+- Can bypass some firewalls and IDS systems that do not expect FIN packets.
+
+---
+
+### **1.6 NULL Scan**
+#### **Purpose**
+To identify open ports by sending TCP packets with no flags set.
+
+#### **Method**
+- Send a TCP packet with no flags to the target port.
+- If the target responds with an RST, the port is closed.
+- No response indicates an open or filtered port.
+
+#### **Use Case**
+- Useful for stealthy scanning but less reliable than SYN or FIN scans.
+
+---
+
+### **1.7 XMAS Scan**
+#### **Purpose**
+To identify open ports by sending TCP packets with FIN, PSH, and URG flags set.
+
+#### **Method**
+- Send a TCP packet with FIN, PSH, and URG flags to the target port.
+- If the target responds with an RST, the port is closed.
+- No response indicates an open or filtered port.
+
+#### **Use Case**
+- Similar to FIN and NULL scans but less common.
+
+---
+
+### **1.8 IP Protocol Scan**
+#### **Purpose**
+To determine which IP protocols (e.g., TCP, UDP, ICMP) are supported by the target.
+
+#### **Method**
+- Send packets with different IP protocol numbers to the target.
+- Analyze responses to determine which protocols are supported.
+
+#### **Use Case**
+- Useful for advanced network analysis and discovering uncommon services.
+
+---
+
+## **2. Banner Grabbing Techniques**
+
+### **2.1 TCP Banner Grabbing**
+#### **Purpose**
+To retrieve service information from open TCP ports.
+
+#### **Method**
+- Establish a TCP connection to the target port.
+- Send a minimal request or probe (e.g., HTTP GET request for port 80).
+- Capture the response, which often includes service banners or headers.
+
+#### **Use Case**
+- Effective for identifying web servers, FTP servers, and other TCP-based services.
+
+---
+
+### **2.2 UDP Banner Grabbing**
+#### **Purpose**
+To retrieve service information from open UDP ports.
+
+#### **Method**
+- Send a UDP packet to the target port.
+- Capture the response, if any, which may include service information.
+
+#### **Use Case**
+- Useful for discovering services like DNS, SNMP, and NTP.
+
+---
+
+### **2.3 Service Fingerprinting**
+#### **Purpose**
+To identify the specific service and version running on an open port.
+
+#### **Method**
+- Send a series of probes or requests designed to elicit unique responses from different services.
+- Analyze the responses to determine the service type and version.
+
+#### **Use Case**
+- Provides detailed information about the target services, aiding in vulnerability assessment.
+
+---
+
+## **Implementation Considerations**
+
+1. **Timeout and Retries**:
+   - Set appropriate timeouts for each scan type to avoid long scan times.
+   - Implement retries for probes that may be dropped or lost.
+
+2. **Parallelism**:
+   - Use parallel processing to send multiple probes simultaneously and improve scan speed.
+
+3. **Error Handling**:
+   - Handle network errors, such as unreachable hosts or dropped packets, gracefully.
+
+4. **Customization**:
+   - Allow users to specify which scan types to use (e.g., SYN scan, UDP scan) and which ports to target.
+
+5. **Output Format**:
+   - Provide clear and concise output, indicating open ports, service banners, and scan results.
+
+---
+
+## **Example Workflow**
+
+1. **Input**: A list of target IP addresses and ports to scan.
+2. **Scanning**:
+   - Perform a TCP SYN scan to identify open TCP ports.
+   - Perform a UDP scan to identify open UDP ports.
+   - Use TCP Connect scan for verification if needed.
+3. **Banner Grabbing**:
+   - Establish connections to open TCP ports and send probes to retrieve banners.
+   - Send UDP packets to open UDP ports and capture responses.
+4. **Service Fingerprinting**:
+   - Analyze responses to identify service types and versions.
+5. **Output**:
+   - Display a list of open ports, associated services, and banners.
+
+---
+
+## **Conclusion**
+
+By implementing these port scanning and banner grabbing techniques, your custom network scanning tool can effectively identify open ports and retrieve service information from target systems. Combining multiple methods ensures robust detection and detailed analysis, even in complex network environments. Tailor the implementation to your specific use case, and consider adding advanced features like parallelism, customizable probes, and detailed reporting for optimal performance.
+
+--- 
+
+This document provides a foundation for building a port scanning and banner grabbing tool. You can expand upon these techniques and add features to suit your needs.

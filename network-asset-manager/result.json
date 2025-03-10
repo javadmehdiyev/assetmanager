@@ -1,0 +1,70 @@
+{
+  "hosts": [
+    {
+      "ip": "192.168.0.1",
+      "is_up": true,
+      "discovery_method": "TCP SYN on port 80"
+    },
+    {
+      "ip": "192.168.0.104",
+      "is_up": true,
+      "discovery_method": "UDP"
+    },
+    {
+      "ip": "192.168.0.102",
+      "is_up": true,
+      "discovery_method": "UDP"
+    },
+    {
+      "ip": "192.168.0.100",
+      "is_up": true,
+      "discovery_method": "UDP"
+    },
+    {
+      "ip": "192.168.0.101",
+      "is_up": true,
+      "discovery_method": "UDP"
+    }
+  ],
+  "port_scans": {
+    "192.168.0.1": [
+      {
+        "port": 22,
+        "protocol": "tcp",
+        "status": "open",
+        "service": "SSH",
+        "banner": "SSH-2.0-OpenSSH_6.6.0"
+      },
+      {
+        "port": 53,
+        "protocol": "tcp",
+        "status": "open",
+        "service": "DNS"
+      },
+      {
+        "port": 80,
+        "protocol": "tcp",
+        "status": "open",
+        "service": "HTTP"
+      }
+    ],
+    "192.168.0.100": null,
+    "192.168.0.101": null,
+    "192.168.0.102": null,
+    "192.168.0.104": [
+      {
+        "port": 53,
+        "protocol": "tcp",
+        "status": "open",
+        "service": "DNS"
+      },
+      {
+        "port": 7000,
+        "protocol": "tcp",
+        "status": "open",
+        "service": "unknown"
+      }
+    ]
+  },
+  "scan_time": "2025-03-10T16:40:42.005296+04:00"
+}
