@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"network-asset-manager/internal/discovery"
+	"network-asset-manager/internal/osfp"
 	"network-asset-manager/internal/portscan"
 
 	"github.com/spf13/cobra"
@@ -34,6 +35,7 @@ using various techniques including ICMP, TCP, UDP, and ARP.`,
 	portRangeFlag      string
 	scanTypeFlag       string
 	enablePortScanFlag bool
+	enableOSScanFlag   bool
 	jsonOutputFlag     bool
 )
 
@@ -48,15 +50,19 @@ func init() {
 	scanCmd.Flags().StringVarP(&portRangeFlag, "port-range", "r", "1-1024", "Port range to scan (e.g., 80,443,8080 or 1-1024)")
 	scanCmd.Flags().StringVarP(&scanTypeFlag, "scan-type", "s", "connect", "Port scan type (connect, syn, fin, null, xmas, ack, udp)")
 
+	// OS scanning flag
+	scanCmd.Flags().BoolVarP(&enableOSScanFlag, "os-detection", "O", false, "Enable OS detection on discovered hosts")
+
 	// Output format flag
 	scanCmd.Flags().BoolVarP(&jsonOutputFlag, "json", "j", false, "Output results in JSON format")
 }
 
 // Combined results structure for JSON output
 type ScanOutput struct {
-	HostDiscovery []HostResult            `json:"hosts"`
-	PortScans     map[string][]PortResult `json:"port_scans,omitempty"`
-	ScanTime      time.Time               `json:"scan_time"`
+	HostDiscovery []HostResult                 `json:"hosts"`
+	PortScans     map[string][]PortResult      `json:"port_scans,omitempty"`
+	OSDetection   map[string]OSDetectionResult `json:"os_detection,omitempty"`
+	ScanTime      time.Time                    `json:"scan_time"`
 }
 
 type HostResult struct {
@@ -75,6 +81,13 @@ type PortResult struct {
 	Banner   string `json:"banner,omitempty"`
 }
 
+type OSDetectionResult struct {
+	Name        string   `json:"name"`
+	Family      string   `json:"family"`
+	Probability float64  `json:"probability"`
+	Methods     []string `json:"methods,omitempty"`
+}
+
 func runScan(cmd *cobra.Command, args []string) error {
 	cidr := args[0]
 
@@ -85,8 +98,9 @@ func runScan(cmd *cobra.Command, args []string) error {
 
 	// Prepare output data structure for JSON
 	output := ScanOutput{
-		ScanTime:  time.Now(),
-		PortScans: make(map[string][]PortResult),
+		ScanTime:    time.Now(),
+		PortScans:   make(map[string][]PortResult),
+		OSDetection: make(map[string]OSDetectionResult),
 	}
 
 	if !jsonOutputFlag {
@@ -111,21 +125,17 @@ func runScan(cmd *cobra.Command, args []string) error {
 	}
 
 	// Display host discovery results in desired format
-	if jsonOutputFlag {
-		// For JSON output, we'll collect all data and output at the end
-	} else {
+	if !jsonOutputFlag {
 		// Display host discovery results in human-readable format
 		fmt.Printf("\nDiscovered %d hosts:\n\n", len(results))
 		fmt.Println(strings.Repeat("-", 80))
-		fmt.Printf("%-15s | %-17s | %-30s | %-15s\n", "IP Address", "MAC Address", "Hostname", "Discovery Method")
+		fmt.Printf("%-20s | %-20s | %-30s | %-10s\n", "IP", "MAC", "Hostname", "Method")
 		fmt.Println(strings.Repeat("-", 80))
-
-		for _, result := range results {
-			fmt.Printf("%-15s | %-17s | %-30s | %-15s\n",
-				result.IP,
-				result.MAC,
-				result.Hostname,
-				result.Method)
+		for _, host := range results {
+			if host.IsUp {
+				fmt.Printf("%-20s | %-20s | %-30s | %-10s\n",
+					host.IP, host.MAC, host.Hostname, host.Method)
+			}
 		}
 		fmt.Println(strings.Repeat("-", 80))
 	}
@@ -223,6 +233,63 @@ func runScan(cmd *cobra.Command, args []string) error {
 					fmt.Println(strings.Repeat("-", 100))
 				} else {
 					fmt.Printf("No open ports found on %s\n", host.IP)
+				}
+			}
+		}
+	}
+
+	// If OS detection is enabled, fingerprint OS on discovered hosts
+	if enableOSScanFlag && len(results) > 0 {
+		if !jsonOutputFlag {
+			fmt.Println("\nPerforming OS detection on discovered hosts...")
+		}
+
+		// Scan each host
+		for _, host := range results {
+			if !host.IsUp {
+				continue
+			}
+
+			if !jsonOutputFlag {
+				fmt.Printf("\nDetecting OS for %s (%s)...\n", host.IP, host.Hostname)
+			}
+
+			// Create OS fingerprinter
+			fingerprinter := osfp.NewOSFingerprinter(host.IP)
+			fingerprinter.Timeout = time.Duration(timeoutFlag) * time.Second
+
+			// Perform OS detection
+			osInfo, err := fingerprinter.FingerprintOS()
+			if err != nil {
+				if !jsonOutputFlag {
+					fmt.Printf("Error detecting OS on %s: %s\n", host.IP, err)
+				}
+				continue
+			}
+
+			// Save results
+			output.OSDetection[host.IP] = OSDetectionResult{
+				Name:        osInfo.Name,
+				Family:      osInfo.Family,
+				Probability: osInfo.Probability,
+				Methods:     osInfo.Methods,
+			}
+
+			// Display OS detection results in human-readable format if not JSON
+			if !jsonOutputFlag {
+				if osInfo.Name != osfp.OSUnknown {
+					fmt.Printf("\nOS Detection Results for %s:\n", host.IP)
+					fmt.Println(strings.Repeat("-", 80))
+					fmt.Printf("%-25s | %-15s | %-12s | %-30s\n", "OS Name", "OS Family", "Probability", "Detection Methods")
+					fmt.Println(strings.Repeat("-", 80))
+					fmt.Printf("%-25s | %-15s | %-12.1f%% | %s\n",
+						osInfo.Name,
+						osInfo.Family,
+						osInfo.Probability*100,
+						strings.Join(osInfo.Methods, ", "))
+					fmt.Println(strings.Repeat("-", 80))
+				} else {
+					fmt.Printf("Could not detect OS on %s\n", host.IP)
 				}
 			}
 		}
