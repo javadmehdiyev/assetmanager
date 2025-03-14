@@ -22,7 +22,7 @@ Network Asset Manager is a comprehensive command-line tool for network discovery
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/network-asset-manager.git
+git clone https://github.com/javadmehdiyev/network-asset-manager.git
 cd network-asset-manager
 
 # Build the project
