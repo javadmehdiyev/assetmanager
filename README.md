@@ -1,19 +1,3 @@
-<think>
-Let me create a comprehensive README that explains the network asset manager tool. I'll include:
-
-1. Introduction - what the tool does
-2. Features - detailed list of capabilities
-3. Installation instructions
-4. Usage examples with common commands
-5. OS detection capabilities
-6. Port scanning capabilities
-7. Output formats
-8. Requirements
-9. Limitations and considerations
-
-I want to make it accessible but also provide enough technical detail to be useful.
-</think>
-
 # Network Asset Manager
 
 Network Asset Manager is a comprehensive command-line tool for network discovery, port scanning, and operating system detection. It helps security professionals and network administrators identify active hosts, open services, and operating system details on their networks.
